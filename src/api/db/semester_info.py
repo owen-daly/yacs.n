@@ -6,16 +6,16 @@ class semester_info:
     def upsert(self, semester, isPublic):
         self.db.execute("""
             INSERT INTO semester_info (semester, public)
-            VALUES (%(SemesterName)s, %(IsPublic)s)
+            VALUES (%(semester_name)s, %(is_public)s)
             ON CONFLICT ON CONSTRAINT semester_info_pkey
             DO UPDATE
-            SET public=%(IsPublic)s
-            ;
+            SET public = = EXCLUDED.public;
         """,
         {
-            "SemesterName": semester,
-            "IsPublic": isPublic
-        }, isSELECT=False)
+            "semester_name": semester,
+            "is_public": isPublic
+        }, 
+        isSELECT=False)
 
     def is_public(self, semester):
         """
@@ -25,6 +25,8 @@ class semester_info:
         data, error = self.db.execute("""
             SELECT public FROM semester_info WHERE semester=%s LIMIT 1;
         """, [semester], isSELECT=True)
-        if data is not None and len(data) > 0:
-            return data[0]['public']
-        return False
+        
+        if error:  # Handle query execution errors
+            return False
+
+        return next(iter(data), {}).get('public', False)
