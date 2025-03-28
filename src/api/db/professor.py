@@ -15,24 +15,49 @@ class Professor:
         self.cache = cache
 
     def add_professor(self, name, title, email, phone, dep, portfolio, profile_page):
-        if email is not None:
-            return self.db_conn.execute("""
-                INSERT INTO professor (Email, Name, Title, Phone_number, Department,
-                                    Portfolio_page, Profile_page)
-                VALUES (%(name)s, %(title)s, %(email)s, %(phone_number)s, %(department)s,
-                        %(portfolio_page)s, %(profile_page)s)
-                ON CONFLICT DO NOTHING;
-            """, {
-                "Name": name,
-                "Title": title,
-                "Email": email,
-                "Phone_number": phone,
-                "Department": dep,
-                "Portfolio_page": portfolio,
-                "Profile_page": profile_page,
-            })
-        else:
+        """
+        Adds a professor to the database.
+        Returns a tuple (True, None) on success or (False, error_message) on failure.
+        """
+        if not email:
             return False, "Email cannot be None."
+
+
+        query = """
+            INSERT INTO professor (Email, Name, Title, Phone_number, Department,
+                               Portfolio_page, Profile_page)
+            VALUES (
+                %(Email)s, 
+                NULLIF(%(Name)s, ''), 
+                NULLIF(%(Title)s, ''), 
+                NULLIF(%(Phone_number)s, ''), 
+                NULLIF(%(Department)s, ''), 
+                NULLIF(%(Portfolio_page)s, ''), 
+                NULLIF(%(Profile_page)s, '')
+            )
+            ON CONFLICT (Email) DO NOTHING
+            RETURNING Email;
+        """
+
+        params = {
+            "Email": email,
+            "Name": name,
+            "Title": title,
+            "Phone_number": phone,
+            "Department": dep,
+            "Portfolio_page": portfolio,
+            "Profile_page": profile_page,
+        }
+
+        result, error = self.db_conn.execute(query, params, isSELECT=True)  # Ensure execution mode
+
+        if error:
+            return False, str(error)
+    
+        if not result:  # If no rows were inserted (conflict occurred)
+            return False, "Professor with this email already exists."
+
+        return True, None  # Success
 
     # def add_bulk_professor(self):
     #     # Load the JSON data from a file
