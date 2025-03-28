@@ -20,42 +20,41 @@ class Courses:
         self.cache = cache
 
     def dayToNum(self, day_char):
-        day_map = {
-            'M': 0,
-            'T': 1,
-            'W': 2,
-            'R': 3,
-            'F': 4
-        }
-        day_num = day_map.get(day_char, -1)
-        if day_num != -1:
-            return day_num
+        day_map = {'M': 0, 'T': 1, 'W': 2, 'R': 3, 'F': 4}
+        return day_map.get(day_char, -1)
 
     def getDays(self, daySequenceStr):
         return set(filter(
             lambda day: day, re.split("(?:(M|T|W|R|F))", daySequenceStr)))
 
     def delete_by_semester(self, semester):
+        """
+        Deletes all records related to a specific semester from course and course_session tables.
+        """
         # clear cache so this semester does not come up again
         self.clear_cache()
-        return self.db.execute("""
-            BEGIN TRANSACTION;
-                DELETE FROM course
-                WHERE semester=%(Semester)s;
-                DELETE FROM course_session
-                WHERE semester=%(Semester)s;
-            COMMIT;
-        """, {
-            "Semester": semester
-        }, isSELECT=False)
+
+        query = """
+            DELETE FROM course_session WHERE semester = %(semester)s;
+            DELETE FROM course WHERE semester = %(semester)s;
+        """
+
+        return self.db.execute(query, {"semester": semester}, isSELECT=False)
 
     def bulk_delete(self, semesters):
+        """
+        Deletes multiple semesters in a batch.
+        """
+        if not semesters:
+            return None  # No operation needed
+        
+        # Attempt to delete each semester
         for semester in semesters:
             _, error = self.delete_by_semester(semester)
             if error:
-                print("ERROR")
-                print(error)
-                return error
+                import logging
+                logging.error(f"Failed to delete semester {semester}: {error}")
+                return error #stop on first error
         # on success, invalidate cache
         self.clear_cache()
         return None
