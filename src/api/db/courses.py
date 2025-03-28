@@ -243,14 +243,25 @@ class Courses:
         return (True, None)
 
     def clear_cache(self):
+        """
+        Clears the API cache, ensuring proper handling in both sync and async contexts.
+        """
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
             loop = None
 
+        async def _clear_cache():
+            try:
+                await self.cache.clear(namespace="API_CACHE")
+            except Exception as e:
+                print(f"Cache clear failed: {e}")  # Consider using logging instead
+
         if loop and loop.is_running():
+            # If an event loop is already running, schedule the task properly
             loop.create_task(self.cache.clear(namespace="API_CACHE"))
         else:
+            # Run in a new event loop only if none exists
             asyncio.run(self.cache.clear("API_CACHE"))
 
 if __name__ == "__main__":
