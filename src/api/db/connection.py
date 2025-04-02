@@ -30,7 +30,10 @@ class database():
                 raise
 
     def close(self):
-        self.conn.close()
+        """Closes the connection if it is open."""
+        if self.conn and not self.conn.closed:
+            self.conn.close()
+            print("[INFO] Database Connection Closed")
 
     def execute(self, sql, args, isSELECT=True):
         cur = self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -53,6 +56,8 @@ class database():
         return (ret, None)
 
     def get_connection(self):
+        """Returns a valid connection, ensuring it is active."""
+        self.connect()  # Reconnect if needed
         return self.conn
 
 
