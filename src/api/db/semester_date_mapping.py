@@ -16,28 +16,36 @@ class semester_date_mapping:
             "date_end": date_end
         }
 
-        result = self.db.execute(query, params, isSELECT=True)  # Assuming execute returns results on SELECT
+        result = self.db.execute(query, params, isSELECT=True)
 
         return result if result else None  # Returns inserted row or None if conflict occurred
 
     def insert_all(self, start_dates, end_dates, names):
-        if len(start_dates) == len(end_dates) == len(names):
-            for i in range(len(start_dates)):
-                if (names[i] and not names[i].isspace()):
-                    # https://stackoverflow.com/questions/36886134/postgres-conflict-handling-with-multiple-unique-constraints
-                    _, error = self.db.execute("""
-                        INSERT INTO semester_date_range (semester_part_name, date_start, date_end)
-                        VALUES (%(SemesterPartName)s, %(DateStart)s, %(DateEnd)s)
-                        ON CONFLICT ON CONSTRAINT semester_date_range_pkey
-                        DO UPDATE
-                        SET semester_part_name = %(SemesterPartName)s
-                        ;
-                    """, {
-                        "SemesterPartName": names[i],
-                        "DateStart": start_dates[i],
-                        "DateEnd": end_dates[i]
-                    }, isSELECT=False)
-                    if (error):
-                        return (False, error)
+        if not (len(start_dates) == len(end_dates) == len(names)):
+            return (False, "Mismatched input list lengths.")
+
+        values = [
+            {
+                "name": names[i],
+                "date_start": start_dates[i],
+                "date_end": end_dates[i]
+            }
+            for i in range(len(names)) if names[i] and not names[i].isspace()
+        ]
+
+        if not values:  # If the filtered list is empty, return success
             return (True, None)
-        return (False, None)
+
+        query = """
+            INSERT INTO semester_date_range (semester_part_name, date_start, date_end)
+            VALUES (%(name)s, %(date_start)s, %(date_end)s)
+            ON CONFLICT (semester_part_name)
+            DO UPDATE SET date_start = EXCLUDED.date_start, date_end = EXCLUDED.date_end
+            RETURNING *;
+        """
+
+        try:
+            result = self.db.executemany(query, values)
+            return (True, result)
+        except Exception as e:
+            return (False, str(e))
