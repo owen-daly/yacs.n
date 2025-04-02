@@ -10,15 +10,24 @@ DB_PORT = os.environ.get('DB_PORT', None)
 DB_PASS = os.environ.get('DB_PASS', None)
 
 class database():
+    def __init__(self):
+        self.conn = None  # No connection initially
+    
     def connect(self):
-        self.conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASS,
-            host=DB_HOST,
-            port=DB_PORT,
-        )
-        print("[INFO] Database Connected")
+        """Ensures a persistent database connection, reconnecting if necessary."""
+        if self.conn is None or self.conn.closed:
+            try:
+                self.conn = psycopg2.connect(
+                    dbname=DB_NAME,
+                    user=DB_USER,
+                    password=DB_PASS,
+                    host=DB_HOST,
+                    port=DB_PORT,
+                )
+                print("[INFO] Database Connected")
+            except psycopg2.Error as e:
+                print("[ERROR] Database connection failed:", e)
+                raise
 
     def close(self):
         self.conn.close()
