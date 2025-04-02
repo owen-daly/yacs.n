@@ -4,16 +4,21 @@ class semester_date_mapping:
         self.db = db_wrapper
 
     def insert(self, date_start, date_end, name):
-        return self.db.execute("""
+        query = """
             INSERT INTO semester_date_range (semester_part_name, date_start, date_end)
-            VALUES (%(SemesterPartName)s, %(DateStart)s, %(DateEnd)s)
+            VALUES (%(name)s, %(date_start)s, %(date_end)s)
             ON CONFLICT DO NOTHING
-            ;
-        """, {
-            "SemesterPartName": name,
-            "DateStart": date_start,
-            "DateEnd": date_end
-        }, isSELECT=False)
+            RETURNING *;
+        """
+        params = {
+            "name": name,
+            "date_start": date_start,
+            "date_end": date_end
+        }
+
+        result = self.db.execute(query, params, isSELECT=True)  # Assuming execute returns results on SELECT
+
+        return result if result else None  # Returns inserted row or None if conflict occurred
 
     def insert_all(self, start_dates, end_dates, names):
         if len(start_dates) == len(end_dates) == len(names):
