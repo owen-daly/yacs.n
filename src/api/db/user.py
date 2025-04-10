@@ -44,6 +44,11 @@ class User(Model):
 
 
     def add_user(self, args):
+        required_fields = ["name", "email", "phone", "password", "major", "degree", "enable"]
+
+        for field in required_fields:
+            if field not in args:
+                raise ValueError(f"Missing required field: {field}")
 
         sql = """
             INSERT INTO public.user_account (
@@ -66,7 +71,11 @@ class User(Model):
             RETURNING user_id;
         """
 
-        return self.db.execute(sql, args, True)[0]  # Returns the new user ID
+        result, error = self.db.execute(sql, args, isSELECT=True)
+        if error:
+            raise Exception(f"Database insert failed: {error}")
+
+        return result[0] if result else None
 
     def delete_user(self, uid):
         try:
