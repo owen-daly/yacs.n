@@ -5,31 +5,42 @@ class User(Model):
         super().__init__()
 
     def get_user(self, uid=None, name=None, email=None, phone=None, password=None, major=None, degree=None, enable=True):
-        sql = """
+        base_query = """
             SELECT user_id, name, email, phone, password, major, degree, enable, admin, super_admin
             FROM public.user_account
-            WHERE (%(uid)s IS NULL OR user_id::text = %(uid)s)
-              AND (%(name)s IS NULL OR name ILIKE %(name)s)
-              AND (%(email)s IS NULL OR email ILIKE %(email)s)
-              AND (%(phone)s IS NULL OR phone LIKE %(phone)s)
-              AND (%(password)s IS NULL OR password LIKE %(password)s)
-              AND (%(major)s IS NULL OR major LIKE %(major)s)
-              AND (%(degree)s IS NULL OR degree LIKE %(degree)s)
-              AND enable IS %(enable)s
         """
+        conditions = []
+        args = {}
 
-        args = {
-            "uid": uid,
-            "name": f"%{name}%" if name else None,
-            "email": f"%{email}%" if email else None,
-            "phone": f"%{phone}%" if phone else None,
-            "password": f"%{password}%" if password else None,
-            "major": f"%{major}%" if major else None,
-            "degree": f"%{degree}%" if degree else None,
-            "enable": enable
-        }
+        if uid is not None:
+            conditions.append("user_id::text = %(uid)s")
+            args["uid"] = str(uid)
+        if name is not None:
+            conditions.append("name ILIKE %(name)s")
+            args["name"] = f"%{name}%"
+        if email is not None:
+            conditions.append("email ILIKE %(email)s")
+            args["email"] = f"%{email}%"
+        if phone is not None:
+            conditions.append("phone LIKE %(phone)s")
+            args["phone"] = f"%{phone}%"
+        if password is not None:
+            conditions.append("password LIKE %(password)s")
+            args["password"] = f"%{password}%"
+        if major is not None:
+            conditions.append("major LIKE %(major)s")
+            args["major"] = f"%{major}%"
+        if degree is not None:
+            conditions.append("degree LIKE %(degree)s")
+            args["degree"] = f"%{degree}%"
+        if enable is not None:
+            conditions.append("enable IS %(enable)s")
+            args["enable"] = enable
 
-        return self.db.execute(sql, args, True)[0]
+        if conditions:
+            base_query += " WHERE " + " AND ".join(conditions)
+
+        return self.db.execute(base_query, args, isSELECT=True)[0]
 
 
     def add_user(self, args):
