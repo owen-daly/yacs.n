@@ -95,16 +95,21 @@ class User(Model):
 
 
     def update_user(self, args):
-        sql = """   UPDATE
-                        public.user_account
+        sql = """   UPDATE public.user_account
                     SET
-                        name        = %(Name)s,
-                        email       = %(Email)s,
-                        phone       = %(Phone)s,
-                        password    = %(Password)s,
-                        major       = %(Major)s,
-                        degree      = %(Degree)s
-                    WHERE
-                        user_id = %(UID)s;
+                        name        = %(name)s,
+                        email       = %(email)s,
+                        phone       = %(phone)s,
+                        password    = %(password)s,
+                        major       = %(major)s,
+                        degree      = %(degree)s
+                    WHERE user_id = %(uid)s;
                     """
-        return self.db.execute(sql, args, False)[0]
+        try:
+        _, err = self.db.execute(sql, args, isSELECT=False)
+        if err:
+            return {"success": False, "error": str(err)}
+        return {"success": True, "message": f"User {args.get('uid')} updated successfully."}
+    
+    except Exception as e:
+        return {"success": False, "error": str(e)}
