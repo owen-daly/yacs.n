@@ -5,22 +5,21 @@ class Admin:
 		self.interface_name = 'admin_info'
 
 	def get_semester_default(self):
-		# NOTE: COALESCE takes first non-null vaue from the list
-		result, error = self.db_conn.execute("""
+		sql = """
 			SELECT admin.semester FROM admin_settings admin
 			UNION ALL
-			SELECT si.semester FROM semester_info si WHERE si.public=true::boolean
-			LIMIT 1
-		""", None, True)
+			SELECT si.semester FROM semester_info si WHERE si.public = TRUE
+			LIMIT 1;
+		"""
+
+		result, error = self.db_conn.execute(sql, None, isSELECT=True)
 
 		if error:
             return None, error
 
 		# Get first row safely, or default to None
         default_semester = result[0]['semester'] if result else None
-
 		return default_semester, None
-
 
 
 	def set_semester_default(self, semester):
