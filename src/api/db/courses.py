@@ -21,11 +21,12 @@ class Courses:
 
     def dayToNum(self, day_char):
         day_map = {'M': 0, 'T': 1, 'W': 2, 'R': 3, 'F': 4}
-        return day_map.get(day_char, -1)
+        if day_char.upper() not in day_map:
+            raise ValueError(f"Invalid day character: {day_char}")
+        return day_map[day_char.upper()]
 
     def getDays(self, daySequenceStr):
-        return set(filter(
-            lambda day: day, re.split("(?:(M|T|W|R|F))", daySequenceStr)))
+        return {char for char in daySequenceStr if char in "MTWRF"}
 
     def delete_by_semester(self, semester):
         """
