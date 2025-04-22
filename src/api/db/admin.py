@@ -25,16 +25,16 @@ class Admin:
 	def set_semester_default(self, semester):
 		try:
 			cmd = """
-				WITH deleted AS (DELETE FROM admin_settings)
+				DELETE FROM admin_settings;
 				INSERT INTO admin_settings(semester)
 				VALUES (%s)
-				ON CONFLICT (semester) DO UPDATE SET semester = EXCLUDED.semester
+				ON CONFLICT (semester) DO UPDATE SET semester = EXCLUDED.semester;
 			"""
 			response, error = self.db_conn.execute(cmd, [semester], False)
 
 		if error:
 			self.db_conn.rollback()
-			return (False, e)
+			return (False, error)
 
 		return bool(response), None  #response check
 
