@@ -40,7 +40,10 @@ class Courses:
             DELETE FROM course WHERE semester = %(semester)s;
         """
 
-        return self.db.execute(query, {"semester": semester}, isSELECT=False)
+        success, error = self.db.execute(query, {"semester": semester}, isSELECT=False)
+        if error:
+            return False, error
+        return True, None
 
     def bulk_delete(self, semesters):
         """
