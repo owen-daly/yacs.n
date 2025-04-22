@@ -7,9 +7,9 @@ class semester_info:
         self.db.execute("""
             INSERT INTO semester_info (semester, public)
             VALUES (%(semester_name)s, %(is_public)s)
-            ON CONFLICT ON CONSTRAINT semester_info_pkey
+            ON CONFLICT (semester)
             DO UPDATE
-            SET public = = EXCLUDED.public;
+            SET public = EXCLUDED.public;
         """,
         {
             "semester_name": semester,
@@ -19,7 +19,7 @@ class semester_info:
 
     def is_public(self, semester):
         """
-        @param: semester name
+        @param: Name of the semester
         @returns: Boolean indicating if the semester is publicly viewable
         """
         data, error = self.db.execute("""
@@ -29,4 +29,7 @@ class semester_info:
         if error:  # Handle query execution errors
             return False
 
-        return next(iter(data), {}).get('public', False)
+        if data:
+            return data[0].get('public', False)
+
+        return False
