@@ -46,22 +46,22 @@ class Courses:
         return True, None
 
     def bulk_delete(self, semesters):
-        """
-        Deletes multiple semesters in a batch.
-        """
         if not semesters:
             return None  # No operation needed
+
+        import logging
+        failed = []
         
         # Attempt to delete each semester
         for semester in semesters:
             _, error = self.delete_by_semester(semester)
             if error:
-                import logging
-                logging.error(f"Failed to delete semester {semester}: {error}")
-                return error #stop on first error
-        # on success, invalidate cache
-        self.clear_cache()
-        return None
+                logging.error(f"[bulk_delete] Failed to delete semester '{semester}': {error}")
+                failed.append((semester, error))
+
+        self.clear_cache() # Invalidate cache after successful deletions
+        
+        return failed if failed else None
 
     def populate_from_csv(self, csv_text):
         conn = self.db.get_connection()
