@@ -248,8 +248,10 @@ class Courses:
 
     def clear_cache(self):
         """
-        Clears the API cache, ensuring proper handling in both sync and async contexts.
+        Clears the API cache, handling both sync and async contexts.
         """
+        import logging
+
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
@@ -259,14 +261,17 @@ class Courses:
             try:
                 await self.cache.clear(namespace="API_CACHE")
             except Exception as e:
-                print(f"Cache clear failed: {e}")  # Consider using logging instead
+                logging.error(f"[clear_cache] Cache clear failed: {e}")
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
 
         if loop and loop.is_running():
-            # If an event loop is already running, schedule the task properly
-            loop.create_task(self.cache.clear(namespace="API_CACHE"))
+            loop.create_task(_clear_cache())
         else:
-            # Run in a new event loop only if none exists
-            asyncio.run(self.cache.clear("API_CACHE"))
+            asyncio.run(_clear_cache())
 
 if __name__ == "__main__":
     # os.chdir(os.path.abspath("../rpi_data"))
